@@ -50,11 +50,11 @@ public class MovieCatlogController{
 
 
          // get all movie ratings
-       UserRating    ratings= restTemplate.getForObject("http://localhost:8092/rating/users/"+userId, UserRating.class);
+       UserRating    ratings= restTemplate.getForObject("http://movie-rating-service/rating/users/"+userId, UserRating.class);
 
 
         return ratings.getRatings().stream().map(rating-> {
-             Movie movie=restTemplate.getForObject("http://localhost:8091/movie/"+rating.getMovieId(), Movie.class);
+             Movie movie=restTemplate.getForObject("http://movie-info-service/movie/"+rating.getMovieId(), Movie.class);
 //            Movie movie=webClient.build().get().uri("http://localhost:8091/movie/"+rating.getMovieId()).
 //                         retrieve().bodyToMono(Movie.class).block();
 
