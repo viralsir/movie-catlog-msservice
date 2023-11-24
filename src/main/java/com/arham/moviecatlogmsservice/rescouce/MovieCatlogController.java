@@ -4,6 +4,9 @@ import com.arham.moviecatlogmsservice.model.CatlogItem;
 import com.arham.moviecatlogmsservice.model.Movie;
 import com.arham.moviecatlogmsservice.model.MovieRating;
 import com.arham.moviecatlogmsservice.model.UserRating;
+import com.arham.moviecatlogmsservice.service.MovieInfo;
+import com.arham.moviecatlogmsservice.service.RatingService;
+import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 import org.apache.catalina.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -39,36 +42,41 @@ public class MovieCatlogController{
     @Autowired
     RestTemplate restTemplate;
 
+    @Autowired
+    MovieInfo movieInfo;
+
+    @Autowired
+    RatingService ratingService;
+
      @Autowired
      WebClient.Builder webClient;
 
+
     @RequestMapping("/{userId}")
+    @HystrixCommand(fallbackMethod = "getfallbackCatlogItem")
     public List<CatlogItem> getCatlogItemByUserId(@PathVariable String userId){
 
-      //  RestTemplate restTemplate=new RestTemplate();
-     //     WebClient.Builder webClientBuilder = WebClient.builder();
-
-
          // get all movie ratings
-       UserRating    ratings= restTemplate.getForObject("http://movie-rating-service/rating/users/"+userId, UserRating.class);
-
+       UserRating    ratings= ratingService.getUserRatings(userId);
 
         return ratings.getRatings().stream().map(rating-> {
-             Movie movie=restTemplate.getForObject("http://movie-info-service/movie/"+rating.getMovieId(), Movie.class);
-//            Movie movie=webClient.build().get().uri("http://localhost:8091/movie/"+rating.getMovieId()).
-//                         retrieve().bodyToMono(Movie.class).block();
-
-
-                    return new CatlogItem(movie.getMovieName(), "Rajnikant movie", rating.getRating());
+                    return movieInfo.getCatlogItem(rating);
 
                 })
                 .collect(Collectors.toList());
 
-        // get all movie info for all ratings
-
-
-        // return Collections.singletonList(new CatlogItem("Jailer","Rajnikant movie",4));
-
     }
 
-}
+
+
+
+
+
+
+    public List<CatlogItem> getfallbackCatlogItem(@PathVariable String userId) {
+        return Arrays.asList(new CatlogItem("No Movie","",0));
+    }
+
+
+
+    }
